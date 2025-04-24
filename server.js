@@ -1,4 +1,5 @@
 const express = require('express');
+const userRoutes = require('./routes/userRoutes');
 
 const dotenv = require('dotenv');
 // Load environment variables
@@ -16,9 +17,9 @@ const client = new Client({
 });
 
 
-
 // Middleware
 app.use(express.json()); // For parsing JSON requests
+app.use('/api/users', userRoutes);
 
 // Simple route for testing
 app.get('/', (req, res) => {
