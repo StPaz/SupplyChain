@@ -1,5 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { authenticate, authorizeRoles } = require('../middleware/auth');
 const { Client } = require('pg');
 const router = express.Router();
 
@@ -14,7 +16,7 @@ const client = new Client({
   database: process.env.DB_NAME,
 });
 
-//client.connect();
+client.connect();
 
 router.post('/register', async (req, res) => {
   const { email, password, role } = req.body;
@@ -48,6 +50,38 @@ router.post('/register', async (req, res) => {
     }
     res.status(500).json({ message: 'Error registering user' });
   }
+});
+
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+  
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Please provide both email and password' });
+    }
+  
+    try {
+      const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+      const user = result.rows[0];
+  
+      // Check if user exists and password matches
+      if (!user || !await bcrypt.compare(password, user.password_hash)) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+  
+      // Generate JWT token
+      console.log(process.env.JWT_SECRET);
+      const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  
+      res.status(200).json({ token });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Error logging in' });
+    }
+  });
+
+router.get('/profile', authenticate, authorizeRoles('Buyer', 'Manufacturer'), (req, res) => {
+  res.status(200).json({ message: 'Profile data' });
 });
 
 module.exports = router;
