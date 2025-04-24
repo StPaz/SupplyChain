@@ -1,5 +1,7 @@
 const express = require('express');
 const userRoutes = require('./routes/userRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const bidRoutes = require('./routes/bidRoutes');
 
 const dotenv = require('dotenv');
 // Load environment variables
@@ -20,6 +22,9 @@ const client = new Client({
 // Middleware
 app.use(express.json()); // For parsing JSON requests
 app.use('/api/users', userRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/bids', bidRoutes);
+
 
 // Simple route for testing
 app.get('/', (req, res) => {

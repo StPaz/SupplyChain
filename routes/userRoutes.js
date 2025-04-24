@@ -2,21 +2,12 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { authenticate, authorizeRoles } = require('../middleware/auth');
-const { Client } = require('pg');
+const pool = require('../db');  // Import the pool from db.js
 const router = express.Router();
 
 const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
-
-const client = new Client({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
-
-client.connect();
 
 router.post('/register', async (req, res) => {
   const { email, password, role } = req.body;
@@ -36,7 +27,7 @@ router.post('/register', async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 10);
 
   try {
-    const result = await client.query(
+    const result = await pool.query(
       'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING *',
       [email, passwordHash, role]
     );
@@ -61,7 +52,7 @@ router.post('/login', async (req, res) => {
     }
   
     try {
-      const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+      const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
       const user = result.rows[0];
   
       // Check if user exists and password matches
